@@ -13,7 +13,7 @@ cd "$(dirname "$0")/.." || exit 1
 
 NODE="C:\\Users\\Administrator\\.workbuddy-ai\\binaries\\node\\versions\\22.22.2-2\\node.exe"
 FILTER="${1:-}"
-SUITES="auditor.unit.mts direction.unit.mts lead-order.unit.mts lead-audit.unit.mts agent.unit.mts narrative.unit.mts hook.unit.mts override.unit.mts duration.unit.mts coverage.unit.mts"
+SUITES="auditor.unit.mts direction.unit.mts lead-order.unit.mts lead-audit.unit.mts agent.unit.mts narrative.unit.mts hook.unit.mts override.unit.mts duration.unit.mts coverage.unit.mts template-io.unit.mts"
 
 total_pass=0
 total_fail=0

@@ -84,7 +84,7 @@ UI (app/page.tsx + app/components)
 
 ## 验证
 
-模型输出不确定，所以验收层断言的是不变量。**10 个回归套件、426 项断言、一条命令：**
+模型输出不确定，所以验收层断言的是不变量。**11 个回归套件、485 项断言、一条命令：**
 
 ```bash
 bash .verify/run.sh          # 全量
@@ -103,6 +103,9 @@ bash .verify/run.sh duration # 只跑时长模式专项
 | `override.unit.mts` | 22 | 覆盖白名单合并、镜头数一致性守卫 |
 | `duration.unit.mts` | 113 | 两种时长模式的时长 / 镜头数 / 时间块 / 免承接行为 |
 | `coverage.unit.mts` | 82 | 叙述顺序、覆盖镜类型与去重、兜底路径放大 |
+| `template-io.unit.mts` | 59 | 模板导出/导入的严格校验、按 id 合并、往返一致性 |
+
+新增套件必须同时加进 `run.sh` 的 `SUITES`，否则不会被回归覆盖。
 
 `.verify/_demo_duration.mts` 用同一段剧情跑两种时长模式，输出成品对照
 （`_demo_duration.md`），用来直观验收两种模式的差异。

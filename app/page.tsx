@@ -4,6 +4,7 @@ import { useStudioContext } from './components/studio-context'
 import StylePresetSelector from './components/style-preset-selector'
 import DurationModeSelector from './components/duration-mode-selector'
 import { EMPTY_OVERRIDE_SUMMARY } from './lib/prompt/prompt-compiler'
+import { IMAGE_TEMPLATE_KEY, VIDEO_TEMPLATE_KEY, mergeTemplates, parseTemplateFile, parseTemplateList, serializeTemplateFile, templateFileName, type TemplateItem } from './lib/template-io'
 
 const moves=['POV 主观视角','FPV 穿越视角','环绕运镜','希区柯克变焦','跟拍','手持感','缓慢推进','焦点转移','过肩反打镜头 Over-the-Shoulder / Reverse Shot','子弹时间运镜 Bullet Time','慢门镜头 Slow Shutter','斜角镜头 Dutch Angle','Fly Through 穿越运镜','低机位 Dolly In 前推','后拉揭示 Dolly Out','斯坦尼康稳定跟拍 Steadicam Follow','升降运镜 Crane Up/Down','横移平移 Tracking / Truck','慢滚旋转 Dutch Roll']
 const moveDescriptions:Record<string,string>={
@@ -28,7 +29,7 @@ const moveDescriptions:Record<string,string>={
  '慢滚旋转 Dutch Roll':'镜头慢慢转斜，不是快速旋转，适合表现不稳定和心理变化。'
 }
 type Shot={id:string;title:string;shotSize?:string;movement:string;prompt:string;transition:string;audit:string}
-type TextTemplate={id:string;name:string;content:string}
+type TextTemplate=TemplateItem
 const demo:Shot[]=[{id:'S01',title:'雨夜建立关系',shotSize:'远景 / Establishing Wide Shot',movement:'跟拍 · 手持感',prompt:'竖屏 9:16，都市情感短剧。远景建立镜头，24mm 广角，深夜雨街，女主穿黑色风衣走向餐厅玻璃窗。摄影机从侧后方低机位稳定跟拍，带轻微可控手持呼吸感；冷蓝雨夜与餐厅暖光形成对比。她停下，看见男友与陌生女性并肩而坐，最后一秒停在她的视线方向。',transition:'黑场淡入 → 动作剪切',audit:'通过：远景交代空间，结尾停在可承接的视线状态。'},{id:'S02',title:'主观确认',shotSize:'中景 / Medium Shot',movement:'POV 主观视角 · 焦点转移',prompt:'承接 S01 结尾。中景切入，以女主 POV 隔着带雨滴的玻璃观察室内，焦点从雨滴转移到交握的手，再转移到男友闪躲的眼神。镜头缓慢推近，保留雨声和模糊谈话。结尾锁定在交握的手上。',transition:'视线匹配切 → 声音桥接',audit:'通过：中景承载关系，POV 与焦点目标明确。'},{id:'S03',title:'情绪失衡',shotSize:'近景 / Close-up',movement:'希区柯克变焦 · 环绕运镜',prompt:'承接 S02 的视线方向，切回女主正面近景。50mm 镜头，摄影机围绕她左侧 90 度平滑环绕至正面，在确认真相瞬间使用一次克制的希区柯克变焦，背景轻微拉伸。她眼眶泛红却强忍泪水，压低声音说“原来是真的”。',transition:'硬切 → 情绪爆点硬切',audit:'通过：近景承载表演和台词，变焦只使用一次。'}]
 const toTemplate=(shots:Shot[])=>shots.map(s=>`${s.id}｜${s.title}\n运镜：${s.movement}\n提示词：${s.prompt}\n转场：${s.transition}\n审核：${s.audit}`).join('\n\n')
 
@@ -41,8 +42,8 @@ function BailianConfigModal({ onClose }:{ onClose:()=>void }){
 export default function Home(){
  const{sceneCard,shotPlan,editorOpen,setEditorOpen,stylePresetId,durationModeId,activeDurationMode,overridesDirty,beginNewStoryline,applyGenerated,setAuditReports,getOverridesForRequest,auditReport,setActiveStylePreset,setCompiled,generatedAt,setGeneratedAt}=useStudioContext();
  const[idea,setIdea]=useState('女主在雨夜发现男友背叛，克制情绪后转身离开。');const[selected,setSelected]=useState(['跟拍','手持感','POV 主观视角','希区柯克变焦']);const[shots,setShots]=useState<Shot[]>(demo);const[busy,setBusy]=useState(false);const[notice,setNotice]=useState('本地演示模式：配置百炼 Key 后可调用 Qwen。');const[settings,setSettings]=useState(false);const[templatesOpen,setTemplatesOpen]=useState(false);const[tab,setTab]=useState<'image'|'video'>('image');const[imageTemplates,setImageTemplates]=useState<TextTemplate[]>([]);const[videoTemplates,setVideoTemplates]=useState<TextTemplate[]>([]);const[imageName,setImageName]=useState('');const[imageText,setImageText]=useState('');const[activeImage,setActiveImage]=useState('');const[imageChange,setImageChange]=useState('');const[imageResult,setImageResult]=useState('');const[imageBusy,setImageBusy]=useState(false);const[videoName,setVideoName]=useState('');const[videoText,setVideoText]=useState('');const[activeVideo,setActiveVideo]=useState('');const[videoChange,setVideoChange]=useState('');const[adaptBusy,setAdaptBusy]=useState(false)
- useEffect(()=>{try{setImageTemplates(JSON.parse(localStorage.getItem('short-drama-image-prompt-templates')||'[]'));setVideoTemplates(JSON.parse(localStorage.getItem('short-drama-video-templates')||'[]'))}catch{}},[])
- const putImages=(list:TextTemplate[])=>{setImageTemplates(list);localStorage.setItem('short-drama-image-prompt-templates',JSON.stringify(list))};const putVideos=(list:TextTemplate[])=>{setVideoTemplates(list);localStorage.setItem('short-drama-video-templates',JSON.stringify(list))};const currentImage=imageTemplates.find(t=>t.id===activeImage);const currentVideo=videoTemplates.find(t=>t.id===activeVideo)
+ useEffect(()=>{try{setImageTemplates(parseTemplateList(JSON.parse(localStorage.getItem(IMAGE_TEMPLATE_KEY)||'[]')));setVideoTemplates(parseTemplateList(JSON.parse(localStorage.getItem(VIDEO_TEMPLATE_KEY)||'[]')))}catch{}},[])
+ const putImages=(list:TextTemplate[])=>{setImageTemplates(list);localStorage.setItem(IMAGE_TEMPLATE_KEY,JSON.stringify(list))};const putVideos=(list:TextTemplate[])=>{setVideoTemplates(list);localStorage.setItem(VIDEO_TEMPLATE_KEY,JSON.stringify(list))};const currentImage=imageTemplates.find(t=>t.id===activeImage);const currentVideo=videoTemplates.find(t=>t.id===activeVideo)
  const toggle=(m:string)=>setSelected(s=>s.includes(m)?s.filter(x=>x!==m):[...s,m]);const selectedLabel=useMemo(()=>selected.join(' · ')||'尚未选择运镜',[selected])
  async function generate(){setBusy(true);setNotice('正在生成导演级分镜…');try{
   // 覆盖只在“本次确实编辑过”时下发；快照由 context 统一管理，
@@ -68,30 +69,20 @@ export default function Home(){
  async function adaptImage(){if(!currentImage||!imageChange.trim())return;setImageBusy(true);setImageResult('');try{const r=await fetch('/api/adapt-image-template',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({template:currentImage.content,change:imageChange})});const d=await r.json();setImageResult(r.ok&&d.prompt?d.prompt:`改写未执行：${d.message||'未知错误。'}`)}catch{setImageResult('改写未执行：无法连接本地服务。')}finally{setImageBusy(false)}}
  async function adaptVideo(){if(!currentVideo||!videoChange.trim())return;setAdaptBusy(true);setNotice('正在按视频提示词模板改编…');try{const r=await fetch('/api/adapt-template',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({template:currentVideo.content,change:videoChange})});const d=await r.json();if(d.shots?.length){setShots(d.shots);setTemplatesOpen(false);setNotice(d.mode==='dashscope'?'已按视频提示词模板完成改编。':'已按模板生成本地改编结果；配置百炼后会更精细。')}}catch{setNotice('模板改编失败。')}finally{setAdaptBusy(false)}}
  const remove=(id:string,kind:'image'|'video')=>{if(kind==='image'){putImages(imageTemplates.filter(t=>t.id!==id));if(activeImage===id)setActiveImage('')}else{putVideos(videoTemplates.filter(t=>t.id!==id));if(activeVideo===id)setActiveVideo('')}}
- // 模板只存在浏览器 localStorage，不随代码仓库迁移；导出/导入是换机器唯一不丢模板的通道。
+ // 校验与合并规则集中在 app/lib/template-io.ts，这里只负责读写与提示。
  const[templateMsg,setTemplateMsg]=useState('')
  function exportTemplates(){
-  const payload={version:1,exportedAt:new Date().toISOString(),image:imageTemplates,video:videoTemplates}
-  const url=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}))
-  const a=document.createElement('a');a.href=url;a.download=`短剧模板库-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(url)
+  const url=URL.createObjectURL(new Blob([serializeTemplateFile(imageTemplates,videoTemplates)],{type:'application/json'}))
+  const a=document.createElement('a');a.href=url;a.download=templateFileName();a.click();URL.revokeObjectURL(url)
   setTemplateMsg(`已导出 ${imageTemplates.length} 个图片模板、${videoTemplates.length} 个视频模板。`)
  }
  function importTemplates(file:File){
   const reader=new FileReader()
   reader.onload=()=>{
-   try{
-    const d=JSON.parse(String(reader.result)) as {image?:unknown;video?:unknown}
-    const pick=(v:unknown):TextTemplate[]=>{
-     if(!Array.isArray(v))return []
-     return (v as Array<Record<string,unknown>>).filter(t=>typeof t?.id==='string'&&typeof t?.name==='string'&&typeof t?.content==='string').map(t=>({id:String(t.id),name:String(t.name),content:String(t.content)}))
-    }
-    const imgs=pick(d?.image);const vids=pick(d?.video)
-    if(!imgs.length&&!vids.length){setTemplateMsg('导入失败：文件里没有可识别的模板。');return}
-    // 按 id 合并，同 id 以导入文件为准，重复导入不会产生副本。
-    const merge=(cur:TextTemplate[],inc:TextTemplate[])=>Array.from(new Map([...cur,...inc].map(t=>[t.id,t])).values())
-    putImages(merge(imageTemplates,imgs));putVideos(merge(videoTemplates,vids))
-    setTemplateMsg(`已导入 ${imgs.length} 个图片模板、${vids.length} 个视频模板（同 ID 已覆盖）。`)
-   }catch{setTemplateMsg('导入失败：不是合法的模板文件。')}
+   const r=parseTemplateFile(String(reader.result))
+   if(!r.ok){setTemplateMsg(r.reason==='invalid-json'?'导入失败：不是合法的模板文件。':'导入失败：文件里没有可识别的模板。');return}
+   putImages(mergeTemplates(imageTemplates,r.image));putVideos(mergeTemplates(videoTemplates,r.video))
+   setTemplateMsg(`已导入 ${r.image.length} 个图片模板、${r.video.length} 个视频模板（同 ID 已覆盖）。`)
   }
   reader.onerror=()=>setTemplateMsg('导入失败：无法读取该文件。')
   reader.readAsText(file)
