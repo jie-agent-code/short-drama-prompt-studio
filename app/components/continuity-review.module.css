@@ -1,0 +1,9 @@
+.panel{position:fixed;right:24px;bottom:24px;width:294px;background:#fbfaf7;border:1px solid #cfc9bf;border-radius:6px;box-shadow:0 16px 44px #1d272b2b;padding:16px;z-index:20;color:#263033}
+
+/* 场景卡编辑面板占据 right:336px 起、宽 390px。
+   编辑面板打开时把审核面板移到它左侧，两个浮层不再互相遮挡。 */
+.shifted{right:748px}
+.header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid #e4e0d8;padding-bottom:10px}.eyebrow{display:block;font-size:9px;letter-spacing:1.5px;color:#7d786f}.header h2{font-size:15px;margin:5px 0 0}.scoreRow{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid #eeeae2}.scoreRow strong{font:38px Georgia,serif;color:#2f806d}.scoreRow span{font-size:11px;line-height:1.5;color:#77736d}.summary{display:flex;justify-content:space-between;gap:10px;padding:10px 0;font-size:11px;color:#666}.summary b{color:#2f806d;font-weight:600}.rules{display:flex;flex-wrap:wrap;gap:5px}.rules span{font-size:10px;color:#4d7668;background:#edf3ef;border-radius:3px;padding:4px 6px}.issues{margin-top:10px;border-top:1px solid #eeeae2;padding-top:8px}.issue{display:flex;gap:8px;padding:6px 0;font-size:10px;line-height:1.45;color:#6f6a63}.issue b{color:#b45f3f;min-width:24px}.issue span{flex:1}.repair{display:block;font-style:normal;color:#8b857b;margin-top:3px}
+
+@media(max-width:1400px){.shifted{right:24px;bottom:auto;top:22px}}
+@media(max-width:600px){.panel{right:14px;bottom:14px;left:14px;width:auto}.shifted{top:auto;bottom:14px}}

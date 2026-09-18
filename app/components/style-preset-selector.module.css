@@ -1,0 +1,10 @@
+.panel{position:fixed;top:22px;right:24px;width:220px;padding:11px 12px;background:#fbfaf7;border:1px solid #d5d0c7;border-radius:5px;box-shadow:0 8px 24px #1d272b18;z-index:18}.panel label{display:block;font-size:10px;font-weight:bold;color:#6f6a63;margin-bottom:5px}.panel select{width:100%;border:1px solid #d8d3c9;background:#fffefb;border-radius:3px;padding:7px;font:11px Arial,'Microsoft YaHei',sans-serif;color:#30363b}.panel p{font-size:10px;line-height:1.4;color:#77736d;margin:6px 0 0}
+
+/* 内联模式：跟随输入面板排版，不再做成 fixed 浮层，避免遮挡右上角按钮和其它面板。 */
+.inline{position:static;width:auto;padding:0;background:transparent;border:0;box-shadow:none;margin:0 0 12px;z-index:auto}
+.inline label{font-size:12px;color:#3b4348;margin-bottom:8px}
+.inline select{padding:10px;font-size:13px}
+.inline p{font-size:11px;color:#7d786f;margin-top:6px}
+.inline .badge{display:inline-block;margin-top:8px;font-size:10px;line-height:1.4;color:#2f6d5c;background:#eaf2ee;border-radius:3px;padding:5px 7px}
+
+@media(max-width:600px){.panel{top:auto;right:14px;bottom:14px;width:210px}}
