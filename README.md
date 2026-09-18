@@ -109,13 +109,66 @@ bash .verify/run.sh duration # 只跑时长模式专项
 
 ## 快速开始
 
+### 首次运行
+
 ```bash
 npm install
-cp .env.example .env.local     # 填入 DASHSCOPE_API_KEY
 npm run dev                    # http://localhost:3000
 ```
 
-百炼 Key 也可以直接在页面右上角「百炼配置」里填写，会写入本机 `.env.local`，不会上传。
+启动后点页面右上角 **⚙ 百炼配置**，把百炼 API Key 粘进去保存即可。
+Key 只发送到本机 Next.js 服务端、写入本机 `.env.local`，页面不回显，也不会进仓库。
+
+也可以手动配置：`cp .env.example .env.local`，再填入 `DASHSCOPE_API_KEY`。
+
+### 换到另一台电脑
+
+代码全在 GitHub 上，新机器只需要三步：
+
+```bash
+git clone https://github.com/jie-agent-code/short-drama-prompt-studio.git
+cd short-drama-prompt-studio
+npm install && npm run dev
+```
+
+**前提**：装好 Node.js ≥ 18.17（推荐 20 / 22）与 Git。
+
+**唯一需要手动补的是百炼 Key**。它存在 `.env.local`，被 `.gitignore` 挡住，
+**不会跟着仓库走**（这是有意设计）。启动后点「⚙ 百炼配置」重新粘一次即可，
+**不需要拷贝任何密钥文件**。
+
+**不需要跟着走、系统会自动重建的**：
+
+| 内容 | 重建方式 |
+|---|---|
+| `node_modules/` | `npm install` |
+| `.next/` | `npm run build` 或 `npm run dev` |
+| `next-env.d.ts` | Next.js 构建时自动生成（即使它被 gitignore） |
+
+**⚠️ 会丢的东西：模板库。** 图片 / 视频提示词模板存在**浏览器 localStorage**，
+key 为 `short-drama-image-prompt-templates` 与 `short-drama-video-templates`。
+它既不进仓库也不进 `.env.local`，换电脑、换浏览器、甚至换端口都会清空。
+
+迁移前请在**旧机器**的浏览器控制台导出：
+
+```js
+copy(JSON.stringify({
+  image: localStorage.getItem('short-drama-image-prompt-templates'),
+  video: localStorage.getItem('short-drama-video-templates')
+}))
+```
+
+把结果存成文本，在**新机器**上打开页面后导入：
+
+```js
+const d = JSON.parse(`粘贴刚才的内容`)
+localStorage.setItem('short-drama-image-prompt-templates', d.image || '[]')
+localStorage.setItem('short-drama-video-templates', d.video || '[]')
+location.reload()
+```
+
+> 以上方法已在干净克隆上实测：`npm install` → `npm run build` → 启动 → 首页返回 200，
+> 全程不需要 `.env.local`（构建期不读取 Key，Key 只在请求时从服务端读取）。
 
 ## 技术栈
 
