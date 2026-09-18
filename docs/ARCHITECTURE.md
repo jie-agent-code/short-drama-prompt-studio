@@ -16,6 +16,7 @@ UI
   app/components/continuity-review.tsx     审核评分与修正摘要
   app/components/style-preset-selector.tsx
   app/components/duration-mode-selector.tsx
+  app/lib/template-io.ts                   模板库导出/导入（纯函数，浏览器侧，唯一实现处）
         │
         │  显式请求体（不使用 window.fetch 拦截）：
         │    idea / movements / imageReference / stylePresetId / durationModeId
@@ -170,7 +171,7 @@ export type DurationMode = {
 .verify/
   run.sh                    统一入口：bash .verify/run.sh [过滤词]
   register-hook.mjs         解析钩子：Node 直跑 .mts 时把 './state' 解析到 './state.ts'
-  *.unit.mts                10 个回归套件，合计 426 项断言
+  *.unit.mts                11 个回归套件，合计 485 项断言
   _demo_duration.mts        一次性脚本（'_' 前缀不进回归）：两种时长模式的成品对照
 ```
 
@@ -186,8 +187,12 @@ export type DurationMode = {
 | `override.unit.mts` | 22 | 覆盖白名单合并、镜头数一致性守卫 |
 | `duration.unit.mts` | 113 | 两种时长模式的时长 / 镜头数 / 时间块 / 免承接行为 |
 | `coverage.unit.mts` | 82 | 叙述顺序、覆盖镜类型与去重、兜底路径放大 |
+| `template-io.unit.mts` | 59 | 模板导出/导入的严格校验、按 id 合并、往返一致性 |
 
 **新增套件必须加进 `run.sh` 的 `SUITES`，否则不会被回归覆盖。**
+
+**新增套件后必须反向验证一次**：故意改坏被守护的代码，确认套件真的会红。
+一个从不失败的测试等于没有测试——无法区分「通过」和「根本没跑到」。
 
 ---
 
@@ -196,8 +201,21 @@ export type DurationMode = {
 `app/lib/server/repositories/template-repository.ts` 是存储契约，当前只有内存实现。
 **注意：`getTemplateRepository()` 目前没有任何调用方**——它是一个预留边界，不是活跃代码。
 
-实际持久化走的是浏览器 `localStorage`（`app/page.tsx` 中的 `short-drama-image-prompt-templates`
-和 `short-drama-video-templates` 两个 key）。
+实际持久化走的是浏览器 `localStorage`，两个 key 为 `short-drama-image-prompt-templates`
+与 `short-drama-video-templates`。
+
+这两个 key 的读写、校验与合并**全部集中在 `app/lib/template-io.ts`（唯一实现处）**，
+`app/page.tsx` 只负责调用与提示。之所以要独立成模块：
+**localStorage 既不进仓库也不进 `.env.local`，换电脑 / 换浏览器 / 换端口都会静默清空**，
+导出/导入是用户唯一不丢模板的通道，这条通道必须有回归覆盖（见 `template-io.unit.mts`）。
+
+设计上两条硬约束：
+
+- 校验**字段不合法就整条剔除，不做猜测性修补**——宁可少导入一条，也不塞一个半对的模板进去。
+- `parseTemplateFile` 用**可判别返回值**区分 `invalid-json` 与 `no-templates`，
+  因为这两种失败要给用户不同的提示；用返回值比让调用方 try/catch 更清楚。
+- `mergeTemplates` 按 `id` 合并、同 id 以导入文件为准，**重复导入不产生副本**——
+  用户会反复点导入，这是必然发生的操作，不是边界情况。
 
 `database/001_init.sql` 是第一版迁移草案，把 projects / prompt_templates / shot_blocks 拆开，
 为后续的 users、versions、audit_runs、model_providers、exports 留出扩展空间而不改 UI 契约。
