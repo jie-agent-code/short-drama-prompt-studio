@@ -149,7 +149,19 @@ npm install && npm run dev
 key 为 `short-drama-image-prompt-templates` 与 `short-drama-video-templates`。
 它既不进仓库也不进 `.env.local`，换电脑、换浏览器、甚至换端口都会清空。
 
-迁移前请在**旧机器**的浏览器控制台导出：
+**迁移方式：用页面右上角「▣ 模板库」面板里的导出 / 导入按钮。**
+
+1. 旧机器：打开「▣ 模板库」→ 点「↓ 导出全部模板」，下载一个 JSON 文件
+2. 新机器：打开同一面板 → 点「↑ 导入模板」，选中该 JSON
+
+导入按模板 `id` 合并，同 id 以文件为准，**重复导入不会产生副本**。
+文件格式为 `{ version, exportedAt, image: [...], video: [...] }`，
+字段不合法的条目会被整条忽略而不是猜测修补。
+
+<details>
+<summary>没有界面时的手动方式（浏览器控制台）</summary>
+
+导出：
 
 ```js
 copy(JSON.stringify({
@@ -158,7 +170,7 @@ copy(JSON.stringify({
 }))
 ```
 
-把结果存成文本，在**新机器**上打开页面后导入：
+导入：
 
 ```js
 const d = JSON.parse(`粘贴刚才的内容`)
@@ -166,6 +178,8 @@ localStorage.setItem('short-drama-image-prompt-templates', d.image || '[]')
 localStorage.setItem('short-drama-video-templates', d.video || '[]')
 location.reload()
 ```
+
+</details>
 
 > 以上方法已在干净克隆上实测：`npm install` → `npm run build` → 启动 → 首页返回 200，
 > 全程不需要 `.env.local`（构建期不读取 Key，Key 只在请求时从服务端读取）。
